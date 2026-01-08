@@ -1,0 +1,14 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno
+.env
+
+# Usuarios locales (login simple)
+data/users.json
+
+# Logs
+*.log
+
+# 🔐 Credenciales Firebase (NUNCA subir)
+flujo-bancario-firebase-adminsdk-fbsvc-5a065cc39f.json
