@@ -1,11 +1,30 @@
 const express = require("express");
+const path = require("path");
+
 const app = express();
 
-app.get("*", (req, res) => {
-  res.send("🔥 SERVIDOR NODE ACTIVO - ESTA ES UNA PRUEBA 🔥");
+// 🔑 PUERTO CORRECTO PARA RENDER
+const PORT = process.env.PORT || 3000;
+
+// Middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Archivos públicos
+app.use(express.static(path.join(__dirname, "public")));
+
+// Ruta de prueba CLARA
+app.get("/api/health", (req, res) => {
+  res.json({
+    ok: true,
+    msg: "Servidor Node funcionando correctamente"
+  });
 });
 
-const PORT = process.env.PORT || 3000;
+// 🚀 INICIO DEL SERVIDOR
 app.listen(PORT, () => {
-  console.log("Servidor de prueba levantado en puerto", PORT);
+  console.log("==================================");
+  console.log("Servidor corriendo correctamente");
+  console.log(`Puerto usado: ${PORT}`);
+  console.log("==================================");
 });
