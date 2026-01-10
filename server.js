@@ -1,56 +1,105 @@
+// ================================
+// IMPORTS
+// ================================
 const express = require("express");
+const session = require("express-session");
+const fs = require("fs");
 const path = require("path");
 
+// ================================
+// APP CONFIG
+// ================================
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware para leer JSON
+// ================================
+// MIDDLEWARES
+// ================================
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Servir archivos estáticos
-app.use(express.static(path.join(__dirname, "public")));
+app.use(
+  session({
+    secret: "clave-super-secreta-finanzas",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
-// Middleware de protección
-function requireAuth(req, res, next) {
-  // Render no mantiene sesiones aún, así que usamos una cookie simple
-  if (req.headers.cookie && req.headers.cookie.includes("auth=true")) {
-    next();
-  } else {
-    res.redirect("/login.html");
+// ================================
+// ARCHIVOS PÚBLICOS LIMITADOS
+// SOLO login, estilos y JS
+// ================================
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    index: false, // 🔒 EVITA que index.html cargue solo
+  })
+);
+
+// ================================
+// LOGIN
+// ================================
+app.post("/login", (req, res) => {
+  const { user, password } = req.body;
+
+  const usersPath = path.join(__dirname, "data", "users.json");
+  const users = JSON.parse(fs.readFileSync(usersPath, "utf8"));
+
+  const foundUser = users.find(
+    u => u.user === user && u.password === password
+  );
+
+  if (!foundUser) {
+    return res.json({
+      ok: false,
+      msg: "Usuario o contraseña incorrectos",
+    });
   }
-}
 
-// Ruta protegida PRINCIPAL
-app.get("/", requireAuth, (req, res) => {
+  req.session.user = {
+    user: foundUser.user,
+    name: foundUser.name,
+  };
+
+  res.json({ ok: true });
+});
+
+// ================================
+// LOGOUT
+// ================================
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/login.html");
+  });
+});
+
+// ================================
+// RUTA PROTEGIDA (APP)
+// ================================
+app.get("/", (req, res) => {
+  if (!req.session.user) {
+    return res.redirect("/login.html");
+  }
+
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Login fake (temporal, para cerrar el hueco)
-app.post("/login", (req, res) => {
-  const { email, password } = req.body;
-
-  // VALIDACIÓN TEMPORAL
-  if (email && password) {
-    res.setHeader(
-      "Set-Cookie",
-      "auth=true; Path=/; HttpOnly=false"
-    );
-    return res.json({ ok: true });
+// ================================
+// TEST API
+// ================================
+app.get("/api/test", (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ msg: "No autorizado" });
   }
 
-  res.status(401).json({ ok: false });
+  res.json({ msg: "API segura funcionando" });
 });
 
-// Logout
-app.get("/logout", (req, res) => {
-  res.setHeader(
-    "Set-Cookie",
-    "auth=; Path=/; Max-Age=0"
-  );
-  res.redirect("/login.html");
-});
-
-// Arranque
+// ================================
+// SERVER
+// ================================
 app.listen(PORT, () => {
-  console.log(`Servidor activo en puerto ${PORT}`);
+  console.log("==================================");
+  console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log("==================================");
 });
