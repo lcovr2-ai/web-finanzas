@@ -1,66 +1,56 @@
-// ================================
-// IMPORTS
-// ================================
 const express = require("express");
-const fs = require("fs");
 const path = require("path");
 
-// ================================
-// APP CONFIG
-// ================================
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Middleware para leer JSON
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Archivos públicos (frontend)
+// Servir archivos estáticos
 app.use(express.static(path.join(__dirname, "public")));
 
-// ================================
-// LOGIN
-// ================================
-app.post("/login", (req, res) => {
-  const { user, password } = req.body;
-
-  // Leer usuarios
-  const usersPath = path.join(__dirname, "data", "users.json");
-  const users = JSON.parse(fs.readFileSync(usersPath, "utf8"));
-
-  // Buscar usuario
-  const foundUser = users.find(
-    u => u.user === user && u.password === password
-  );
-
-  if (foundUser) {
-    res.json({
-      ok: true,
-      name: foundUser.name
-    });
+// Middleware de protección
+function requireAuth(req, res, next) {
+  // Render no mantiene sesiones aún, así que usamos una cookie simple
+  if (req.headers.cookie && req.headers.cookie.includes("auth=true")) {
+    next();
   } else {
-    res.json({
-      ok: false,
-      msg: "Usuario o contraseña incorrectos"
-    });
+    res.redirect("/login.html");
   }
+}
+
+// Ruta protegida PRINCIPAL
+app.get("/", requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ================================
-// EJEMPLO DE RUTA PROTEGIDA (FUTURO)
-// ================================
-app.get("/api/test", (req, res) => {
-  res.json({
-    msg: "API funcionando correctamente"
-  });
+// Login fake (temporal, para cerrar el hueco)
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+
+  // VALIDACIÓN TEMPORAL
+  if (email && password) {
+    res.setHeader(
+      "Set-Cookie",
+      "auth=true; Path=/; HttpOnly=false"
+    );
+    return res.json({ ok: true });
+  }
+
+  res.status(401).json({ ok: false });
 });
 
-// ================================
-// SERVIDOR
-// ================================
+// Logout
+app.get("/logout", (req, res) => {
+  res.setHeader(
+    "Set-Cookie",
+    "auth=; Path=/; Max-Age=0"
+  );
+  res.redirect("/login.html");
+});
+
+// Arranque
 app.listen(PORT, () => {
-  console.log("==================================");
-  console.log(`Servidor corriendo en:`);
-  console.log(`👉 http://localhost:${PORT}`);
-  console.log("==================================");
+  console.log(`Servidor activo en puerto ${PORT}`);
 });
