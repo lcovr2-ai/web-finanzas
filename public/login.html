@@ -1,21 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Login | Web Finanzas</title>
+  <meta charset="UTF-8">
+  <title>Web Finanzas - Login</title>
 </head>
 <body>
+  <h2>Iniciar sesión</h2>
 
-<h2>🔐 Iniciar sesión</h2>
+  <form>
+    <label>Correo:</label><br>
+    <input type="email" required><br><br>
 
-<form method="POST" action="/login">
-  <label>Email:</label><br>
-  <input type="email" name="email" required><br><br>
+    <label>Contraseña:</label><br>
+    <input type="password" required><br><br>
 
-  <label>Contraseña:</label><br>
-  <input type="password" name="password" required><br><br>
+    <button type="submit">Entrar</button>
+  </form>
 
-  <button type="submit">Entrar</button>
-</form>
-
+  <p>
+    <a href="#">Registrarse</a> |
+    <a href="#">¿Olvidaste tu contraseña?</a>
+  </p>
 </body>
 </html>
